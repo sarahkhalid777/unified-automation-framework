@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout | ShopLite</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main>
+    <h1>Checkout</h1>
+    <div class="grid">
+      <form class="stack card" data-testid="checkout-form" novalidate>
+        <h2>Shipping details</h2>
+        <label>Full name <input name="name" autocomplete="name" data-testid="shipping-name"><span class="field-error" data-error-for="shipping.name"></span></label>
+        <label>Address <input name="address" autocomplete="street-address" data-testid="shipping-address"><span class="field-error" data-error-for="shipping.address"></span></label>
+        <label>City <input name="city" autocomplete="address-level2" data-testid="shipping-city"><span class="field-error" data-error-for="shipping.city"></span></label>
+        <label>Postcode <input name="postcode" autocomplete="postal-code" data-testid="shipping-postcode"><span class="field-error" data-error-for="shipping.postcode"></span></label>
+        <label>Country <input name="country" autocomplete="country-name" data-testid="shipping-country"><span class="field-error" data-error-for="shipping.country"></span></label>
+        <div role="alert" data-testid="checkout-error" hidden></div>
+        <button type="submit" data-testid="place-order">Place order</button>
+      </form>
+      <section class="card" aria-label="Order summary">
+        <h2>Order summary</h2>
+        <ul data-testid="checkout-summary"></ul>
+        <p>Subtotal: <span data-testid="checkout-subtotal"></span></p>
+        <p>Tax (8%): <span data-testid="checkout-tax"></span></p>
+        <p><strong>Total: <span data-testid="checkout-total"></span></strong></p>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/checkout.js"></script>
+</body>
+</html>

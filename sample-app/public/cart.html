@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cart | ShopLite</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main>
+    <h1>Your cart</h1>
+    <div role="status" data-testid="cart-message" hidden></div>
+    <p data-testid="cart-empty" hidden>Your cart is empty. <a href="/">Continue shopping</a></p>
+    <div data-testid="cart-content" hidden>
+      <table>
+        <thead><tr><th>Product</th><th>Unit price</th><th>Quantity</th><th>Line total</th><th><span hidden>Actions</span></th></tr></thead>
+        <tbody data-testid="cart-items"></tbody>
+      </table>
+      <p class="totals">Subtotal: <strong data-testid="cart-subtotal"></strong></p>
+      <p class="totals"><a href="/checkout"><button type="button" data-testid="proceed-to-checkout">Proceed to checkout</button></a></p>
+    </div>
+  </main>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/cart.js"></script>
+</body>
+</html>

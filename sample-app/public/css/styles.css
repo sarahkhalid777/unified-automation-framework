@@ -1,0 +1,40 @@
+:root {
+  --brand: #1f6f5c;
+  --brand-dark: #154d40;
+  --text: #1d2327;
+  --muted: #5f6b73;
+  --border: #dde3e7;
+  --bg: #f6f8f9;
+  --error: #b3261e;
+  --success: #1e7b34;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); background: var(--bg); }
+.site-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #fff; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+.site-header nav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 1.3rem; color: var(--brand); text-decoration: none; }
+a { color: var(--brand); }
+main { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+h1 { margin-top: 0; }
+.card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.product-card h2 { font-size: 1.05rem; margin: 0 0 6px; }
+.price { font-weight: 600; }
+.muted { color: var(--muted); }
+form.stack, .stack { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
+label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+input, select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+button { padding: 9px 16px; border: 0; border-radius: 6px; background: var(--brand); color: #fff; font: inherit; cursor: pointer; }
+button:hover { background: var(--brand-dark); }
+button.secondary { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+button.link-button { background: none; color: var(--brand); padding: 0; text-decoration: underline; }
+.search { display: flex; gap: 8px; margin-bottom: 16px; }
+.search input { flex: 1; }
+.message { padding: 10px 12px; border-radius: 6px; margin: 12px 0; }
+.message-error { background: #fdecea; color: var(--error); }
+.message-success { background: #e7f5ea; color: var(--success); }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+td input[type="number"] { width: 70px; }
+.totals { margin-top: 16px; text-align: right; }
+.field-error { color: var(--error); font-size: 0.85rem; font-weight: 400; }

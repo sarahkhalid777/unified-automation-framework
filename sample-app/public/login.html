@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in | ShopLite</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main>
+    <h1>Log in</h1>
+    <div data-testid="login-notice" hidden></div>
+    <form class="stack card" data-testid="login-form" novalidate>
+      <label>Email <input type="email" name="email" autocomplete="username" required data-testid="login-email"></label>
+      <label>Password <input type="password" name="password" autocomplete="current-password" required data-testid="login-password"></label>
+      <div role="alert" data-testid="login-error" hidden></div>
+      <button type="submit" data-testid="login-submit">Log in</button>
+      <p class="muted">New here? <a href="/register">Create an account</a></p>
+    </form>
+  </main>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>

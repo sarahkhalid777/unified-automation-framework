@@ -1,0 +1,23 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Products | ShopLite</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main>
+    <h1>Products</h1>
+    <form class="search" role="search" data-testid="search-form">
+      <input id="search-input" type="search" name="search" placeholder="Search products" aria-label="Search products" data-testid="search-input">
+      <button type="submit" data-testid="search-button">Search</button>
+    </form>
+    <p class="muted" data-testid="result-summary" aria-live="polite"></p>
+    <div class="grid" data-testid="product-list"></div>
+  </main>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/products.js"></script>
+</body>
+</html>

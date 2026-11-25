@@ -1,0 +1,9 @@
+node_modules/
+
+# Local configuration and secrets
+.env
+!.env.example
+
+# Embedded PostgreSQL data directory and runtime logs
+.pgdata/
+logs/
