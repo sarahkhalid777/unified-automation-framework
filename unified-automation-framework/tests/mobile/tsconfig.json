@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "@wdio/globals/types", "@wdio/mocha-framework"]
+  },
+  "include": ["./**/*.ts", "../../src/**/*.ts", "../../wdio.conf.ts"],
+  // Replaces the root's list, which excludes this folder.
+  "exclude": ["../../node_modules", "../../reports"]
+}

@@ -1,0 +1,10 @@
+{
+  "$id": "https://schemas.shoplite.test/auth-session.json",
+  "type": "object",
+  "required": ["token", "customer"],
+  "additionalProperties": false,
+  "properties": {
+    "token": { "type": "string", "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$" },
+    "customer": { "$ref": "customer.json" }
+  }
+}

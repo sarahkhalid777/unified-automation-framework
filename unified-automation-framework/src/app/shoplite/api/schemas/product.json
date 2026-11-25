@@ -1,0 +1,16 @@
+{
+  "$id": "https://schemas.shoplite.test/product.json",
+  "type": "object",
+  "required": ["id", "sku", "name", "description", "category", "priceCents", "currency", "stock"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "sku": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "category": { "type": "string", "minLength": 1 },
+    "priceCents": { "type": "integer", "minimum": 0 },
+    "currency": { "const": "USD" },
+    "stock": { "type": "integer", "minimum": 0 }
+  }
+}

@@ -1,0 +1,21 @@
+node_modules/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Generated test output
+reports/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+blob-report/
+*.log
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

@@ -1,0 +1,10 @@
+{
+  "$id": "https://schemas.shoplite.test/product-list.json",
+  "type": "object",
+  "required": ["items", "total"],
+  "additionalProperties": false,
+  "properties": {
+    "items": { "type": "array", "items": { "$ref": "product.json" } },
+    "total": { "type": "integer", "minimum": 0 }
+  }
+}

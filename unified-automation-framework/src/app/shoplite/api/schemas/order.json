@@ -1,0 +1,45 @@
+{
+  "$id": "https://schemas.shoplite.test/order.json",
+  "type": "object",
+  "required": ["id", "orderNumber", "customerId", "status", "items", "subtotalCents", "taxCents", "totalCents", "currency", "shipping", "createdAt"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "orderNumber": { "type": "string", "pattern": "^SL-\\d{8}-[A-HJ-NP-Z2-9]{6}$" },
+    "customerId": { "type": "integer", "minimum": 1 },
+    "status": { "enum": ["PLACED", "CANCELLED"] },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["productId", "name", "quantity", "unitPriceCents", "lineTotalCents"],
+        "additionalProperties": false,
+        "properties": {
+          "productId": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "unitPriceCents": { "type": "integer", "minimum": 0 },
+          "lineTotalCents": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "subtotalCents": { "type": "integer", "minimum": 0 },
+    "taxCents": { "type": "integer", "minimum": 0 },
+    "totalCents": { "type": "integer", "minimum": 0 },
+    "currency": { "const": "USD" },
+    "shipping": {
+      "type": "object",
+      "required": ["name", "address", "city", "postcode", "country"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "address": { "type": "string", "minLength": 1 },
+        "city": { "type": "string", "minLength": 1 },
+        "postcode": { "type": "string", "minLength": 3, "maxLength": 10 },
+        "country": { "type": "string", "minLength": 1 }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

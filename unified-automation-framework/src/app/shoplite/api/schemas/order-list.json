@@ -1,0 +1,23 @@
+{
+  "$id": "https://schemas.shoplite.test/order-list.json",
+  "type": "object",
+  "required": ["items", "total"],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["orderNumber", "status", "totalCents", "createdAt"],
+        "additionalProperties": false,
+        "properties": {
+          "orderNumber": { "type": "string" },
+          "status": { "enum": ["PLACED", "CANCELLED"] },
+          "totalCents": { "type": "integer", "minimum": 0 },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "total": { "type": "integer", "minimum": 0 }
+  }
+}

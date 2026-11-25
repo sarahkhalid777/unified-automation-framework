@@ -1,0 +1,30 @@
+{
+  "$id": "https://schemas.shoplite.test/cart.json",
+  "type": "object",
+  "required": ["id", "customerId", "status", "items", "itemCount", "subtotalCents", "currency"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "customerId": { "type": "integer", "minimum": 1 },
+    "status": { "enum": ["OPEN", "CHECKED_OUT"] },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["productId", "sku", "name", "quantity", "unitPriceCents", "lineTotalCents"],
+        "additionalProperties": false,
+        "properties": {
+          "productId": { "type": "integer", "minimum": 1 },
+          "sku": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 99 },
+          "unitPriceCents": { "type": "integer", "minimum": 0 },
+          "lineTotalCents": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "itemCount": { "type": "integer", "minimum": 0 },
+    "subtotalCents": { "type": "integer", "minimum": 0 },
+    "currency": { "const": "USD" }
+  }
+}
