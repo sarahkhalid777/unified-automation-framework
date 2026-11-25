@@ -1,0 +1,33 @@
+name: Start ShopLite
+description: >
+  Installs the sample application, applies its schema and seed data to the job's PostgreSQL
+  service and starts it in the background on port 3000. Reads DB_* and JWT_SECRET from the
+  job environment. Expects Node.js to be set up already.
+
+runs:
+  using: composite
+  steps:
+    # embedded-postgres is optional and only used on developer machines; CI has a real server.
+    - name: Install ShopLite
+      shell: bash
+      working-directory: sample-app
+      run: npm ci --omit=optional --no-audit --no-fund
+
+    - name: Start ShopLite
+      shell: bash
+      working-directory: sample-app
+      env:
+        DB_EMBEDDED: 'false'
+      run: |
+        mkdir -p logs
+        nohup npm run start:local > logs/server.out 2>&1 &
+        for attempt in $(seq 1 30); do
+          if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
+            echo "ShopLite is up"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "::error::ShopLite did not become healthy within 60 seconds"
+        cat logs/server.out
+        exit 1

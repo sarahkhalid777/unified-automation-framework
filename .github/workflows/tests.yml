@@ -1,0 +1,341 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Weekdays 02:30 UTC: catches breakage from browser, image or dependency updates without a commit.
+    - cron: '30 2 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      browsers:
+        description: Browsers for the web tests
+        type: choice
+        options: [all, chromium, firefox, webkit]
+        default: all
+      android:
+        description: Run the Android tests
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  # A new push makes an older pull request run pointless. Runs on main always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TEST_ENV: ci
+  FORCE_COLOR: '1'
+
+defaults:
+  run:
+    shell: bash
+    working-directory: unified-automation-framework
+
+jobs:
+  checks:
+    name: Static checks and framework tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Fail here with one clear message rather than in every test job with a database error.
+      - name: Check repository secrets
+        working-directory: .
+        env:
+          HAS_DB_USER: ${{ secrets.CI_DB_USER != '' }}
+          HAS_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD != '' }}
+          HAS_JWT_SECRET: ${{ secrets.CI_JWT_SECRET != '' }}
+        run: |
+          missing=()
+          [ "$HAS_DB_USER" = true ] || missing+=(CI_DB_USER)
+          [ "$HAS_DB_PASSWORD" = true ] || missing+=(CI_DB_PASSWORD)
+          [ "$HAS_JWT_SECRET" = true ] || missing+=(CI_JWT_SECRET)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Repository secrets not set: ${missing[*]}. See documentation/framework-guide/ci-cd.md."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-framework
+
+      - name: Type check, lint and test ID check
+        run: npm run verify
+
+      - name: Framework tests
+        run: npm run test:framework
+
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: node scripts/ci-summary.mjs "Framework tests" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-framework
+          path: unified-automation-framework/reports/allure-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+  api-and-database:
+    name: API, database and integration
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:19-alpine
+        env:
+          POSTGRES_DB: shoplite
+          POSTGRES_USER: ${{ secrets.CI_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # ShopLite and the framework read the same names.
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_NAME: shoplite
+      DB_USER: ${{ secrets.CI_DB_USER }}
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-framework
+      - uses: ./.github/actions/start-shoplite
+
+      # The integration journey drives the UI in Chromium.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: API, database and integration tests
+        env:
+          APP_LOG_FILE: ../sample-app/logs/app.log
+        run: npx playwright test --project=api --project=database --project=integration
+
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: node scripts/ci-summary.mjs "API, database and integration" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-api-database
+          path: unified-automation-framework/reports/allure-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: evidence-api-database
+          path: |
+            unified-automation-framework/reports/html
+            unified-automation-framework/reports/runs
+            sample-app/logs
+          retention-days: 14
+          if-no-files-found: ignore
+
+  web:
+    name: Web (${{ matrix.browser }})
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # One browser failing shouldn't hide whether the others pass.
+      fail-fast: false
+      matrix:
+        browser: ${{ (github.event_name == 'workflow_dispatch' && inputs.browsers != 'all') && fromJSON(format('["{0}"]', inputs.browsers)) || fromJSON('["chromium","firefox","webkit"]') }}
+    services:
+      postgres:
+        image: postgres:19-alpine
+        env:
+          POSTGRES_DB: shoplite
+          POSTGRES_USER: ${{ secrets.CI_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_NAME: shoplite
+      DB_USER: ${{ secrets.CI_DB_USER }}
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-framework
+      - uses: ./.github/actions/start-shoplite
+
+      - name: Install ${{ matrix.browser }}
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Web tests
+        env:
+          APP_LOG_FILE: ../sample-app/logs/app.log
+        run: npx playwright test --project=${{ matrix.browser }}
+
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: |
+          node scripts/ci-summary.mjs "Web: ${{ matrix.browser }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-web-${{ matrix.browser }}
+          path: unified-automation-framework/reports/allure-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: evidence-web-${{ matrix.browser }}
+          path: |
+            unified-automation-framework/reports/html
+            unified-automation-framework/reports/runs
+            sample-app/logs
+          retention-days: 14
+          if-no-files-found: ignore
+
+  android:
+    name: Android (emulator)
+    needs: checks
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.android }}
+    # Linux runners expose KVM, which the x86_64 emulator needs to be usable.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      APPIUM_HOME: ${{ github.workspace }}/.tools/appium-home
+      ANDROID_APP_PATH: ${{ github.workspace }}/.tools/apps/mda-2.3.0-27.apk
+      APK_URL: https://github.com/saucelabs/my-demo-app-android/releases/download/2.3.0/mda-2.3.0-27.apk
+      APK_SHA256: bd3a3d6f2d50e076b2701ed2cc6a0ca82157b40a7033cf5be9f5d084b6591ec8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-framework
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download the app under test
+        run: |
+          mkdir -p "$(dirname "$ANDROID_APP_PATH")"
+          curl -fsSL -o "$ANDROID_APP_PATH" "$APK_URL"
+          echo "$APK_SHA256  $ANDROID_APP_PATH" | sha256sum --check
+
+      - name: Install the Appium UiAutomator2 driver
+        run: npm run mobile:setup
+
+      - name: Android tests
+        # Third-party action: pinned to the commit of v2.38.0 so a moved tag can't change what runs.
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          working-directory: unified-automation-framework
+          script: npm run test:mobile
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-android
+          path: unified-automation-framework/reports/allure-results-mobile
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # Appium server log, WebdriverIO logs, and screenshot/logcat/view hierarchy of failed tests.
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: evidence-android
+          path: unified-automation-framework/reports/mobile
+          retention-days: 14
+          if-no-files-found: ignore
+
+  report:
+    name: Allure report
+    needs: [checks, api-and-database, web, android]
+    # Also after failures: the report is most useful then. Skipped jobs simply add no results.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-framework
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: allure-results-*
+          path: unified-automation-framework/reports/allure-results
+          merge-multiple: true
+
+      # The history file gives the report its trend charts and flaky/new-failure markers.
+      - uses: actions/cache/restore@v6
+        with:
+          path: unified-automation-framework/reports/history
+          key: allure-history-${{ github.run_id }}
+          restore-keys: allure-history-
+
+      - name: Generate the report
+        run: npx allure generate reports/allure-results --config allurerc.mjs --clean
+
+      # Only main writes history, so pull request runs don't appear in its trend.
+      - uses: actions/cache/save@v6
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        with:
+          path: unified-automation-framework/reports/history
+          key: allure-history-${{ github.run_id }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: allure-report
+          path: unified-automation-framework/reports/allure-report
+          retention-days: 30
+
+      - uses: actions/upload-pages-artifact@v5
+        if: ${{ vars.PUBLISH_ALLURE_REPORT == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        with:
+          path: unified-automation-framework/reports/allure-report
+
+  publish-report:
+    name: Publish report to GitHub Pages
+    needs: report
+    # Opt-in: Pages must be enabled for the repository (Settings > Pages > Source: GitHub Actions).
+    if: ${{ vars.PUBLISH_ALLURE_REPORT == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5
