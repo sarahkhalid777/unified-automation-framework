@@ -43,6 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Checkout first, so the summary step below can still run when the secret check fails.
+      - uses: actions/checkout@v7
+
       # Fail here with one clear message rather than in every test job with a database error.
       - name: Check repository secrets
         working-directory: .
@@ -60,7 +63,6 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-framework
 
       - name: Type check, lint and test ID check
@@ -281,8 +283,9 @@ jobs:
   report:
     name: Allure report
     needs: [checks, api-and-database, web, android]
-    # Also after failures: the report is most useful then. Skipped jobs simply add no results.
-    if: ${{ !cancelled() }}
+    # Also after test failures: the report is most useful then. Skipped jobs simply add no results.
+    # Not when the checks failed, because then no tests ran.
+    if: ${{ !cancelled() && needs.checks.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
